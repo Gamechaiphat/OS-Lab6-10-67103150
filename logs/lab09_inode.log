@@ -1,0 +1,14 @@
+--- OS Inode Inspection for: dataset_sample.csv ---
+Inode Number:   1442844
+File Size:      46 bytes
+Created On:     Sat Oct 17 13:55:04 2026
+Last Modified:  Sat Oct 17 13:55:04 2026
+OS Permissions: -rw-rw-rw-
+  File: dataset_sample.csv
+  Size: 46        	Blocks: 8          IO Block: 4096   regular file
+Device: 7,4	Inode: 1442844     Links: 1
+Access: (0666/-rw-rw-rw-)  Uid: ( 1000/codespace)   Gid: ( 1000/codespace)
+Access: 2026-09-27 15:09:29.098509650 +0000
+Modify: 2026-10-17 13:55:04.625491836 +0000
+Change: 2026-10-17 13:55:04.625491836 +0000
+ Birth: 2026-09-27 15:07:49.318507854 +0000

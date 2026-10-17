@@ -1,34 +1,53 @@
 ======================================================
 COE67-222 Operating Systems - Lab 09 Report
-Name: Mr.Chaiyaphat Onwanna
+
+Name: ไชยภัทร อ่อนวันนา
+
 Student ID: 67103150
+
 ======================================================
 
-1. Inodes and Metadata:
-In the inode_inspector.py script, we printed the "Inode Number". If you rename the file using the Linux mv command, will the Inode Number change? Why or why not? (Hint: Think about how the OS separates the file name from the actual data).
+1. Inodes and Metadata
 
-Ans: 
-The Inode Number (1455564 from our actual run) will NOT change; it remains exactly the same.
-In Unix/Linux filesystems, the operating system strictly separates the file name from the file metadata and data blocks:
-1. The Inode is the underlying data structure that stores all critical metadata (file size of 46 bytes, permissions, ownership, timestamps, and physical data block pointers on disk).
-2. The file name is merely a text entry in a directory table (a mapping of string name -> Inode number).
-When renaming a file using the Linux `mv` command within the same filesystem, the OS only updates the directory record so the new filename points to the existing Inode. The actual Inode structure and data blocks on disk are not moved or reallocated, meaning the Inode number stays identical.
+In my run of inode_inspector.py, dataset_sample.csv had Inode
+Number 1442844 and a size of 46 bytes (the file content has spaces
+after the commas in the header line). The permissions were
+-rw-rw-rw- (0666).
 
-2. POSIX Permissions:
-If you want to set a file's permission so that the Owner has Read/Write/Execute (7), the Group has Read/Execute (5), and Others have absolutely no access (0), what would be the 3-digit octal number you pass into os.chmod() ?
+If I rename the file with the mv command, the Inode Number does not
+change. Linux keeps the file name separate from the file data and
+metadata. The name is only an entry in the directory that points to
+an inode. The inode stores the owner, size, permissions, timestamps,
+and the location of the data blocks. mv only changes the directory
+entry, so the same inode is used. (I can check this with ls -i
+before and after mv.)
 
-Ans: 
-The 3-digit octal number is 750 (written as 0o750 in Python).
-Calculation Breakdown:
-- Owner (rwx): Read (4) + Write (2) + Execute (1) = 7
-- Group (r-x): Read (4) + Write (0) + Execute (1) = 5
-- Others (---): Read (0) + Write (0) + Execute (0) = 0
-When applied via `os.chmod(file, 0o750)`, the OS permission string becomes `-rwxr-x---`.
+------------------------------------------------------
 
-3. The AI Context:
-Why is it safer to rely on Operating System file permissions (like os.chmod(0o444)) to protect production model weights rather than relying solely on application-level logic or Python try-except blocks?
+2. POSIX Permissions
 
-Ans: 
-Relying on OS-level file permissions is vastly safer because the OS Kernel operates at the lowest software layer and acts as the ultimate hardware gatekeeper:
-1. Kernel-Level Enforcement: File permissions are enforced by the Linux kernel during system calls (such as `open()` or `write()`). If model weights are set to Read-Only (`0o444`), any attempt to open the file in write mode (`open(file, "w")`) is immediately intercepted and blocked with a `PermissionError` by the kernel before any data touches the disk. This eliminates risks caused by buggy user code, missing exception handlers, or accidental overwrite scripts.
-2. Cross-Language and Multi-User Protection: In large AI training clusters, many engineers run diverse tools, shell scripts, C++ inference runtimes, and Python frameworks. Application-level logic only protects code written inside that specific script. OS permissions provide universal, platform-wide security that protects multi-million dollar model assets against accidental corruption across all processes and users.
+Owner = Read/Write/Execute = 4+2+1 = 7
+Group = Read/Execute = 4+1 = 5
+Others = no access = 0
+
+So the octal number is 750, and I would use os.chmod(file, 0o750).
+
+------------------------------------------------------
+
+3. The AI Context
+
+In my run of os_security.py, after os.chmod(secure_file, 0o400) the
+permission became -r--------, and the script's attempt to write to
+the file failed with PermissionError: [Errno 13] Permission denied.
+ai_weight_protection.py gave the same result with 0o444 and the
+model file stayed safe.
+
+OS permissions are safer than application logic because the Linux
+kernel checks them every time any program opens the file, no matter
+which program, script, or user tries it. A try-except block only
+exists inside one program: it can be forgotten, written wrongly, or
+missing in another person's script, and it does not stop a buggy
+training job from opening the file in write mode. With 0o444, the
+kernel refuses the write before any data is changed. One limit is
+that a root user can bypass these permissions, so the cluster also
+needs correct ownership (chown) and admin control.

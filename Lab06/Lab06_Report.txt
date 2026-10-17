@@ -9,22 +9,58 @@ Student ID: 67103150
 
 1. FIFO vs LRU (Phase 2)
 
-The LRU algorithm performed better than FIFO because it remembers which page was used most recently. When the memory is full, LRU removes the page that has not been used for the longest time. This helps keep frequently used pages in memory and reduces page faults.
+I ran page_replacement.py with the reference string
+2, 3, 2, 1, 5, 2, 4, 5, 3, 2, 5, 2 and 3 frames. FIFO had 9 page
+faults and LRU had 7 page faults, so LRU performed better.
 
-FIFO only removes the oldest page in memory. It does not consider whether the page is still being used, so it may remove a page that the program needs again soon. Therefore, FIFO usually has more page faults than LRU.
+LRU decides which page to evict by looking at when each page was
+last used. Every time a page hit happens, the page is moved to the
+end of the list (most recently used). The page at the front of the
+list is the one not used for the longest time, so LRU evicts it
+when the memory is full.
+
+FIFO only evicts the page that entered memory first. It does not
+check whether the page is still being used. In my output, when
+Page 5 was loaded, FIFO evicted Page 2, but Page 2 was requested
+again very soon and caused another page fault. LRU evicted Page 3
+instead, because Page 2 had just been used, so Page 2 was a page
+hit. This shows that FIFO can remove a page that the program still
+needs, while LRU keeps recently used pages in memory.
 
 ------------------------------------------------------
 
 2. Understanding Thrashing (Phase 3)
 
-Thrashing happens when the operating system spends most of its time moving pages between RAM and disk instead of running the program.
+Thrashing happens when the operating system spends most of its
+time moving pages between RAM and disk instead of running the
+program, because the RAM is not big enough.
 
-In Scenario 2, the processing time is much higher because the system keeps reading and writing data to the disk. Disk access is much slower than RAM, so the CPU has to wait, making the whole program run much slower.
+In my run of ai_thrashing.py, Scenario 1 (data fits in RAM) took
+0.4782 seconds and Scenario 2 (thrashing) took 1.6641 seconds.
+Scenario 2 was about 3.48 times slower. The script prints "3 TIMES"
+because it rounds the number.
+
+Scenario 2 is slower because in every iteration the program has to
+open, read, write, and close a file on the disk. Disk access is
+much slower than RAM, and each file operation also needs system
+calls. The CPU spends its time waiting for the disk (I/O wait)
+instead of doing useful calculation. Note that this script is a
+simulation of thrashing using file I/O, but it shows the same
+effect as the OS swapping pages to disk.
 
 ------------------------------------------------------
 
 3. AI Engineering Decision
 
-Lowering the batch_size reduces the amount of memory needed during AI model training. When the memory usage becomes smaller, the data can fit into RAM without using swap space.
+The batch_size controls how much data, activations, and gradients
+the model must keep in memory at the same time. When I lower the
+batch_size, the working set becomes smaller. If the working set
+fits into physical RAM, the pages stay in RAM and the operating
+system does not need to swap them to the disk again and again.
 
-As a result, the operating system does not need to move pages between RAM and disk frequently. This prevents thrashing, reduces page faults, and makes the AI model run faster and more efficiently.
+As a result, page faults decrease (only the first load remains),
+thrashing stops, and the training runs much faster. The trade-off
+is that a smaller batch means more steps per epoch. Other methods
+such as gradient checkpointing or CPU offloading can also be used
+to reduce memory use.
+
